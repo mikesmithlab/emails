@@ -4,12 +4,13 @@ import pathlib
 
 import sys
 
-from custom_exceptions import FolderNotFoundException
+
 
 # setting path
 sys.path.append('..')
 
-
+from custom_exceptions import FolderNotFoundException
+from dates import parse_date, format_datetime_to_str
 
 from typing import Optional, Callable, Type
 
@@ -30,18 +31,28 @@ def print_folder_names(outlook, account='ppzmis@exmail.nottingham.ac.uk'):
             for sub_sub_folder in sub_folder.Folders:
                 print('\t\t' + str(sub_sub_folder))
 
+
 def open_outlook(account='ppzmis@exmail.nottingham.ac.uk'):
+    """Create new instance of Outlook
+
+    Args:
+        account (str, optional): account email. Defaults to 'ppzmis@exmail.nottingham.ac.uk'.
+
+    Returns:
+        _type_: Outlook Object's folder associated with email
+    """
     outlook = win32.Dispatch("Outlook.Application").GetNamespace("MAPI").Folders(account)
     return outlook
 
-def get_emails(outlook, folder: tuple=tuple('Inbox'), filter : dict={}) -> list[Type[win32.CDispatch]]:
+def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type[win32.CDispatch]]:
     """A function to scan emails on local Outlook client
 
     Args:
         folder (tuple): Specifies folder tree. Tuple of strings starting with top level folder descending to lowest subfolder. Call print_folder_names to see what is what
         filter (dict): a dictionary specifying filters to the emails returned. Defaults to {}
 
-    All parameters in filter are optional. parameters which take str check if the str is contained in subject etc. Takes wildcards
+    All parameters in filter are optional. parameters which take str check if the str is contained in subject etc.
+    has_attachments will only return emails with attachments if True but all emails if False
 
     filter = {
                 'start': Union[str dd/mm/yy, datetime.datetime],
@@ -55,25 +66,36 @@ def get_emails(outlook, folder: tuple=tuple('Inbox'), filter : dict={}) -> list[
     Returns:
         list[Type[win32com.client.CDispatch]]: A list of all emails which match criteria in filter_fn
     """
-    
     mailbox = outlook
     try:
         for folder_name in folder:
-            mailbox = mailbox.Folder(folder_name)
-    except e:
+            mailbox = mailbox.Folders(folder_name)
+    except Exception as e:
         raise FolderNotFoundException(e)
     messages=mailbox.Items
+    
 
+    #Apply filters to messages
     if 'start' in filter.keys():
-        messages = messages.Restrict("[ReceivedTime] >= '" + filter['start_date'])
+        #Note format string is American Y-d-m for the benefit of Outlook 
+        messages = messages.Restrict("[ReceivedTime] >= '" + format_datetime_to_str(parse_date(filter['start']),format="%Y-%d-%m %H:%M %p") + "'")
     if 'stop' in filter.keys():
-        messages = messages.Restrict("[ReceivedTime] <= '" + filter['stop_date'])
+        messages = messages.Restrict("[ReceivedTime] <= '" + format_datetime_to_str(parse_date(filter['stop']),format="%Y-%d-%m %H:%M %p") + "'")
     if 'sender_email' in filter.keys():
-        filter = "@SQL=" & chr(34) & "urn:schemas:httpmail:subject" & Chr(34) & " ci_phrasematch " + filter['sender_email'] 
-        messages = messages.Restrict(filter)
-        
-    #filtered_messages: list[Type[win32com.client.CDispatch]] = filter#(messages)
-    return messages
+        messages = messages.Restrict("@SQL=urn:schemas:httpmail:fromemail Like '%" + filter['sender_email'] + "%'" )
+    if 'cc_email' in filter.keys():
+        messages = messages.Restrict("@SQL=urn:schemas:httpmail:cc Like '%" + filter['sender_email'] + "%'" )
+    if 'subject' in filter.keys():
+        messages = messages.Restrict("@SQL=urn:schemas:httpmail:subject Like '%" + filter['subject'] + "%'" )
+    if 'body' in filter.keys():
+        messages = messages.Restrict("@SQL=urn:schemas:httpmail:textdescription Like '%" + filter['body'] + "%'" )
+    if 'html_body' in filter.keys():
+        messages = messages.Restrict("@SQL=urn:schemas:httpmail:htmldescription Like '%" + filter['html_body'] + "%'" )
+    if 'has_attachment' in filter.keys():
+        if filter['has_attachment']:
+            messages = messages.Restrict("@SQL=urn:schemas:httpmail:hasattachment=1")
+
+    return list(messages)
 
 
 def move_emails(outlook : Type[win32.Dispatch], messages : list, new_folder : tuple=('Inbox')):
@@ -92,7 +114,7 @@ def move_emails(outlook : Type[win32.Dispatch], messages : list, new_folder : tu
     try:
         for folder_name in new_folder:
             to_mailbox = to_mailbox.Folder(folder_name)
-    except e:
+    except Exception as e:
         raise FolderNotFoundException(e)
 
     for message in messages:
@@ -137,9 +159,19 @@ if __name__ == '__main__':
     #print_folder_names(outlook)
 
     #msg = {'to':'mike.i.smith@nottingham.ac.uk',
-            'subject':'Test',
-            'html_body':'<h1>Test</h1>'}
+    #        'subject':'Test',
+    #        'html_body':'<h1>Test</h1>'}
 
     #send_email(msg)
 
-    filter = {}
+    filter = {'start':'10/12/22',
+            'stop':'12/12/22 23:59',
+            'sender_email':'gillianbmoore@hotmail.co.uk',
+            'subject':'SCART',
+            'has_attachment':True}
+
+    outlook = open_outlook()
+    msgs = get_emails(outlook, filter=filter)
+    for msg in msgs:
+        print(msg.Subject)
+    

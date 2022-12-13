@@ -14,6 +14,21 @@ def parse_date(datestring : str) -> datetime.datetime:
     """
     return dateutil.parser.parse(datestring, dayfirst=True)
 
+
+def format_datetime_to_str(datetime_obj : datetime.datetime, format="%Y-%m-%d %H:%M %p") -> str:
+    """Convert datetime object to string with given format
+    Note the default format string is Year-day-month since Outlook is American
+
+    Args:
+        datetime_obj (datetime.datetime): date
+        format (str, optional): formatted date. Defaults to "%Y-%d-%m %H:%M %p".
+
+    Returns:
+        str: formatted date
+    """
+    return datetime_obj.strftime(format)
+
+
 def now() -> datetime.datetime:
     """creates datetime object for current moment
 
@@ -46,4 +61,4 @@ def relative_datetime(date : datetime.datetime, delta_year=0, delta_month=0, del
 if __name__ =='__main__':
     print(str(parse_date('2nd march 2025')))
     print(now())
-    print(relative_datetime(now(),delta_year=1))
+    print(format_datetime_to_str(relative_datetime(now(),delta_year=1)))
