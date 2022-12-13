@@ -19,7 +19,7 @@ from typing import Optional, Callable, Type
 
 def print_folder_names(outlook, account='ppzmis@exmail.nottingham.ac.uk'):
     """
-    Quick utility method to show folder names. Construct
+    Quick utility method to show folder names and folder tree. Construct
     Hierarchy of names in tuple as input to get_emails.
     """
     inbox = outlook.Folders('Inbox')
@@ -44,6 +44,28 @@ def open_outlook(account='ppzmis@exmail.nottingham.ac.uk'):
     outlook = win32.Dispatch("Outlook.Application").GetNamespace("MAPI").Folders(account)
     return outlook
 
+def find_folder(outlook, folder: tuple=('Inbox',)) -> Type[win32.CDispatch]:
+    """Navigates outlook email folder structure and returns object containing all message objects
+
+    Args:
+        outlook (_type_): outlook instance
+        folder (tuple, optional): folder tuple e.g ('Inbox', 'Admin', 'Church'). Defaults to ('Inbox',).
+
+    Raises:
+        FolderNotFoundException: simply raises and prints description of error
+
+    Returns:
+        Type[win32.CDispatch]: mailfolder object
+    """
+    mailbox = outlook   
+    try:
+        for folder_name in folder:
+            mailbox = mailbox.Folders(folder_name)
+    except Exception as e:
+        raise FolderNotFoundException(e)
+    
+    return mailbox
+
 def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type[win32.CDispatch]]:
     """A function to scan emails on local Outlook client
 
@@ -53,36 +75,37 @@ def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type
 
     All parameters in filter are optional. parameters which take str check if the str is contained in subject etc.
     has_attachments will only return emails with attachments if True but all emails if False
+    It is not recommended to use from_email and from. Likely to produce weird results.
 
     filter = {
                 'start': Union[str dd/mm/yy, datetime.datetime],
                 'stop': Union[str dd/mm/yy, datetime.datetime],
-                'sender_email': str,
+                'from_email': str,
+                'from_name : str,
+                'cc_email': str.
                 'subject': str,
                 'body': str,
+                'html_body':str,
                 'has_attachments': bool
              }
 
     Returns:
         list[Type[win32com.client.CDispatch]]: A list of all emails which match criteria in filter_fn
     """
-    mailbox = outlook
-    try:
-        for folder_name in folder:
-            mailbox = mailbox.Folders(folder_name)
-    except Exception as e:
-        raise FolderNotFoundException(e)
-    messages=mailbox.Items
-    
+   
+    messages = find_folder(outlook, folder=folder).Items
 
     #Apply filters to messages
+    #https://docs.oracle.com/cd/E13218_01/wlp/compozearchive/javadoc/portlets20/com/compoze/exchange/webdav/HttpMailProperty.html
     if 'start' in filter.keys():
         #Note format string is American Y-d-m for the benefit of Outlook 
         messages = messages.Restrict("[ReceivedTime] >= '" + format_datetime_to_str(parse_date(filter['start']),format="%Y-%d-%m %H:%M %p") + "'")
     if 'stop' in filter.keys():
         messages = messages.Restrict("[ReceivedTime] <= '" + format_datetime_to_str(parse_date(filter['stop']),format="%Y-%d-%m %H:%M %p") + "'")
-    if 'sender_email' in filter.keys():
-        messages = messages.Restrict("@SQL=urn:schemas:httpmail:fromemail Like '%" + filter['sender_email'] + "%'" )
+    if 'from_email' in filter.keys():
+        messages = messages.Restrict("@SQL=urn:schemas:httpmail:fromemail Like '%" + filter['from_email'] + "%'" )
+    if 'from_name' in filter.keys():
+        messages = messages.Restrict("@SQL=urn:schemas:httpmail:fromname Like '%" + filter['from_name'] + "%'" )
     if 'cc_email' in filter.keys():
         messages = messages.Restrict("@SQL=urn:schemas:httpmail:cc Like '%" + filter['sender_email'] + "%'" )
     if 'subject' in filter.keys():
@@ -98,24 +121,19 @@ def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type
     return list(messages)
 
 
-def move_emails(outlook : Type[win32.Dispatch], messages : list, new_folder : tuple=('Inbox')):
+def move_emails(outlook : Type[win32.Dispatch], messages : list, folder : tuple=('Inbox')):
     """Moves messages to new folder
 
     Args:
         outlook (Type[win32.Dispatch]): Mail Object
         messages (list): list of message items returned by get_emails
-        new_folder (tuple, optional): tuple of strs corresponding to hierarcy of folders. Defaults to ('Inbox').
+        folder (tuple, optional): tuple of strs corresponding to hierarcy of folders. Defaults to ('Inbox').
 
     Raises:
         FolderNotFoundException: _description_
     """
 
-    to_mailbox = outlook
-    try:
-        for folder_name in new_folder:
-            to_mailbox = to_mailbox.Folder(folder_name)
-    except Exception as e:
-        raise FolderNotFoundException(e)
+    to_mailbox = find_folder(outlook, folder=folder)
 
     for message in messages:
         message.move(to_mailbox)
@@ -164,14 +182,13 @@ if __name__ == '__main__':
 
     #send_email(msg)
 
-    filter = {'start':'10/12/22',
-            'stop':'12/12/22 23:59',
-            'sender_email':'gillianbmoore@hotmail.co.uk',
-            'subject':'SCART',
-            'has_attachment':True}
+    filter = {
+              'from_name':'Ian Hall',
+
+            }
 
     outlook = open_outlook()
     msgs = get_emails(outlook, filter=filter)
-    for msg in msgs:
-        print(msg.Subject)
+    print(len(msgs))
+    move_emails(outlook, msgs, folder=('Inbox', 'Admin', 'Church','PCC'))
     
