@@ -133,11 +133,13 @@ def send_email(msg: dict, attachments=None):
 
 
 if __name__ == '__main__':
-    outlook = open_outlook()
-    print_folder_names(outlook)
+    #outlook = open_outlook()
+    #print_folder_names(outlook)
 
-    msg = {'to':'mike.i.smith@nottingham.ac.uk',
+    #msg = {'to':'mike.i.smith@nottingham.ac.uk',
             'subject':'Test',
             'html_body':'<h1>Test</h1>'}
 
-    send_email(msg)
+    #send_email(msg)
+
+    filter = {}
