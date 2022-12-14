@@ -31,6 +31,34 @@ def print_folder_names(outlook, account='ppzmis@exmail.nottingham.ac.uk'):
             for sub_sub_folder in sub_folder.Folders:
                 print('\t\t' + str(sub_sub_folder))
 
+def extract_unique_properties(messages) --> dict[list(str)]:
+    """Extract the unique values in certain fields from a collection of messages
+
+    Args:
+        messages (Type[win32.CDispatch]): Collection of messages
+
+    Returns:
+        dictionary of lists: each list contains strings pertaining to unique values
+    """
+    properties = {
+                    'from_email':[],
+                    'from_name':[],
+                    'subject':[]
+                }
+    for message in messages:
+        properties['from_name'].append(message.Sender)
+        properties['from_email'].append(message.SenderEmail)
+        properties['subject'].append(message.Subject)
+
+    properties['from_name'] = list(set(properties['from_name']))
+    properties['from_email'] = list(set(properties['from_email']))
+    properties['subject'] = list(set(properties['subject']))
+
+    return properties
+
+
+def download_attachments(messages, folder):
+    pass
 
 def open_outlook(account='ppzmis@exmail.nottingham.ac.uk'):
     """Create new instance of Outlook
@@ -57,13 +85,13 @@ def find_folder(outlook, folder: tuple=('Inbox',)) -> Type[win32.CDispatch]:
     Returns:
         Type[win32.CDispatch]: mailfolder object
     """
-    mailbox = outlook   
+    mailbox = outlook
     try:
         for folder_name in folder:
             mailbox = mailbox.Folders(folder_name)
     except Exception as e:
         raise FolderNotFoundException(e)
-    
+
     return mailbox
 
 def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type[win32.CDispatch]]:
@@ -92,13 +120,13 @@ def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type
     Returns:
         list[Type[win32com.client.CDispatch]]: A list of all emails which match criteria in filter_fn
     """
-   
+
     messages = find_folder(outlook, folder=folder).Items
 
     #Apply filters to messages
     #https://docs.oracle.com/cd/E13218_01/wlp/compozearchive/javadoc/portlets20/com/compoze/exchange/webdav/HttpMailProperty.html
     if 'start' in filter.keys():
-        #Note format string is American Y-d-m for the benefit of Outlook 
+        #Note format string is American Y-d-m for the benefit of Outlook
         messages = messages.Restrict("[ReceivedTime] >= '" + format_datetime_to_str(parse_date(filter['start']),format="%Y-%d-%m %H:%M %p") + "'")
     if 'stop' in filter.keys():
         messages = messages.Restrict("[ReceivedTime] <= '" + format_datetime_to_str(parse_date(filter['stop']),format="%Y-%d-%m %H:%M %p") + "'")
@@ -150,8 +178,8 @@ def send_email(msg: dict, attachments=None):
                         'html_body' : message with html formatting,
                     }
         attachments (_type_, optional): _description_. Defaults to None.
-    
-        'to' and 'subject' required, 
+
+        'to' and 'subject' required,
         'body' or 'html_body' are optional
         'html_body' only applied if 'body' not present in msg.keys()
     """
@@ -159,7 +187,7 @@ def send_email(msg: dict, attachments=None):
     mail = outlook.CreateItem(0)
     mail.To = msg['to']
     mail.Subject = msg['subject']
-    
+
     if 'body' in msg.keys():
         mail.Body = msg['body']
     elif 'html_body' in msg.keys():
@@ -191,4 +219,3 @@ if __name__ == '__main__':
     msgs = get_emails(outlook, filter=filter)
     print(len(msgs))
     move_emails(outlook, msgs, folder=('Inbox', 'Admin', 'Church','PCC'))
-    
