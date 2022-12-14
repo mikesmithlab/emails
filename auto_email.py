@@ -1,10 +1,7 @@
 import win32com.client as win32
 import datetime
 import pathlib
-
 import sys
-
-
 
 # setting path
 sys.path.append('..')
@@ -15,72 +12,6 @@ from dates import parse_date, format_datetime_to_str
 from typing import Optional, Callable, Type, Dict
 
 
-
-
-def print_folder_names(outlook, account='ppzmis@exmail.nottingham.ac.uk'):
-    """
-    Quick utility method to show folder names and folder tree. Construct
-    Hierarchy of names in tuple as input to get_emails.
-    """
-    inbox = outlook.Folders('Inbox')
-    for folder in inbox.Folders:
-        #index starts from 1
-        print(folder)
-        for sub_folder in folder.Folders:
-            print('\t' + str(sub_folder))
-            for sub_sub_folder in sub_folder.Folders:
-                print('\t\t' + str(sub_sub_folder))
-
-def extract_unique_properties(messages):
-    """Extract the unique values in certain fields from a collection of messages
-
-    Args:
-        messages (Type[win32.CDispatch]): Collection of messages
-
-    Returns:
-        dictionary of lists: each list contains strings pertaining to unique values
-    """
-    properties = {
-                    'from_email':[],
-                    'from_name':[],
-                    'subject':[]
-                }
-    for message in messages:
-        print(message.Subject)
-
-    for message in messages:
-        properties['from_name'].append(str(message.Sender))
-        properties['from_email'].append(str(message.SenderEmailAddress))
-        properties['subject'].append(str(message.Subject))
-
-    properties['from_name'] = list(set(properties['from_name']))
-    properties['from_email'] = list(set(properties['from_email']))
-    properties['subject'] = list(set(properties['subject']))
-
-    return properties
-
-
-def download_attachments(messages : Type[win32.CDispatch], folder : str, change_filename : bool=False) -> list():
-    """Downloads the attachments from a collection of messages to a specified folder. If change_filename is True the
-    names will be generated to have format `request2_3'. Function will overwrite files with out checking.
-
-    Args:
-        messages (list): list of message items returned by get_emails. Takes output from get_emails()
-        folder (tuple, optional): folder to which attachments should be downloaded specified in hierarchical format ('Inbox', 'Admin', 'Church').
-
-    Returns:
-        list: list of strings containing downloaded attachment full path and new filenames.
-    """
-    attachment_names = []
-    for i,message in enumerate(messages):
-        for j,attachment in enumerate(message.Attachments):
-            if change_filename:
-                filename=folder + 'request_' + str(i) + '_' + str(j) + pathlib.Path(attachment.FileName).suffix
-            else:
-                filename = attachment.FileName
-            attachment.SaveAsFile(filename)
-            attachment_names.append(filename)
-    return attachment_names
 
 def open_outlook(account='ppzmis@exmail.nottingham.ac.uk'):
     """Create new instance of Outlook
@@ -170,6 +101,27 @@ def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type
 
     return list(messages)
 
+def download_attachments(messages : Type[win32.CDispatch], folder : str, change_filename : bool=False) -> list():
+    """Downloads the attachments from a collection of messages to a specified folder. If change_filename is True the
+    names will be generated to have format `request2_3'. Function will overwrite files with out checking.
+
+    Args:
+        messages (list): list of message items returned by get_emails. Takes output from get_emails()
+        folder (tuple, optional): folder to which attachments should be downloaded specified in hierarchical format ('Inbox', 'Admin', 'Church').
+
+    Returns:
+        list: list of strings containing downloaded attachment full path and new filenames.
+    """
+    attachment_names = []
+    for i,message in enumerate(messages):
+        for j,attachment in enumerate(message.Attachments):
+            if change_filename:
+                filename=folder + 'request_' + str(i) + '_' + str(j) + pathlib.Path(attachment.FileName).suffix
+            else:
+                filename = attachment.FileName
+            attachment.SaveAsFile(filename)
+            attachment_names.append(filename)
+    return attachment_names
 
 def move_emails(outlook : Type[win32.Dispatch], messages : list, folder : tuple=('Inbox')):
     """Moves messages to new folder
@@ -187,7 +139,6 @@ def move_emails(outlook : Type[win32.Dispatch], messages : list, folder : tuple=
 
     for message in messages:
         message.move(to_mailbox)
-
 
 def send_email(msg: dict, attachments=None):
     """Sends an email using the local outlook
@@ -220,6 +171,54 @@ def send_email(msg: dict, attachments=None):
             mail.Attachments.Add(attachment)
 
     mail.Send()
+
+"""
+------------------------------------------------------------------------------
+Helper functions
+------------------------------------------------------------------------------
+"""
+
+def print_folder_names(outlook, account='ppzmis@exmail.nottingham.ac.uk'):
+    """
+    Quick utility method to show folder names and folder tree. Construct
+    Hierarchy of names in tuple as input to get_emails.
+    """
+    inbox = outlook.Folders('Inbox')
+    for folder in inbox.Folders:
+        #index starts from 1
+        print(folder)
+        for sub_folder in folder.Folders:
+            print('\t' + str(sub_folder))
+            for sub_sub_folder in sub_folder.Folders:
+                print('\t\t' + str(sub_sub_folder))
+
+def extract_unique_properties(messages):
+    """Extract the unique values in certain fields from a collection of messages
+
+    Args:
+        messages (Type[win32.CDispatch]): Collection of messages
+
+    Returns:
+        dictionary of lists: each list contains strings pertaining to unique values
+    """
+    properties = {
+                    'from_email':[],
+                    'from_name':[],
+                    'subject':[]
+                }
+    for message in messages:
+        print(message.Subject)
+
+    for message in messages:
+        properties['from_name'].append(str(message.Sender))
+        properties['from_email'].append(str(message.SenderEmailAddress))
+        properties['subject'].append(str(message.Subject))
+
+    properties['from_name'] = list(set(properties['from_name']))
+    properties['from_email'] = list(set(properties['from_email']))
+    properties['subject'] = list(set(properties['subject']))
+
+    return properties
 
 
 if __name__ == '__main__':
