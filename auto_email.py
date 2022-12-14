@@ -12,7 +12,7 @@ sys.path.append('..')
 from custom_exceptions import FolderNotFoundException
 from dates import parse_date, format_datetime_to_str
 
-from typing import Optional, Callable, Type
+from typing import Optional, Callable, Type, Dict
 
 
 
@@ -31,7 +31,7 @@ def print_folder_names(outlook, account='ppzmis@exmail.nottingham.ac.uk'):
             for sub_sub_folder in sub_folder.Folders:
                 print('\t\t' + str(sub_sub_folder))
 
-def extract_unique_properties(messages) --> dict[list(str)]:
+def extract_unique_properties(messages):
     """Extract the unique values in certain fields from a collection of messages
 
     Args:
@@ -46,9 +46,12 @@ def extract_unique_properties(messages) --> dict[list(str)]:
                     'subject':[]
                 }
     for message in messages:
-        properties['from_name'].append(message.Sender)
-        properties['from_email'].append(message.SenderEmail)
-        properties['subject'].append(message.Subject)
+        print(message.Subject)
+
+    for message in messages:
+        properties['from_name'].append(str(message.Sender))
+        properties['from_email'].append(str(message.SenderEmailAddress))
+        properties['subject'].append(str(message.Subject))
 
     properties['from_name'] = list(set(properties['from_name']))
     properties['from_email'] = list(set(properties['from_email']))
@@ -57,8 +60,27 @@ def extract_unique_properties(messages) --> dict[list(str)]:
     return properties
 
 
-def download_attachments(messages, folder):
-    pass
+def download_attachments(messages : Type[win32.CDispatch], folder : str, change_filename : bool=False) -> list():
+    """Downloads the attachments from a collection of messages to a specified folder. If change_filename is True the
+    names will be generated to have format `request2_3'. Function will overwrite files with out checking.
+
+    Args:
+        messages (list): list of message items returned by get_emails. Takes output from get_emails()
+        folder (tuple, optional): folder to which attachments should be downloaded specified in hierarchical format ('Inbox', 'Admin', 'Church').
+
+    Returns:
+        list: list of strings containing downloaded attachment full path and new filenames.
+    """
+    attachment_names = []
+    for i,message in enumerate(messages):
+        for j,attachment in enumerate(message.Attachments):
+            if change_filename:
+                filename=folder + 'request_' + str(i) + '_' + str(j) + pathlib.Path(attachment.FileName).suffix
+            else:
+                filename = attachment.FileName
+            attachment.SaveAsFile(filename)
+            attachment_names.append(filename)
+    return attachment_names
 
 def open_outlook(account='ppzmis@exmail.nottingham.ac.uk'):
     """Create new instance of Outlook
@@ -154,7 +176,7 @@ def move_emails(outlook : Type[win32.Dispatch], messages : list, folder : tuple=
 
     Args:
         outlook (Type[win32.Dispatch]): Mail Object
-        messages (list): list of message items returned by get_emails
+        messages (list): list of message items returned by get_emails. Takes output from get_emails()
         folder (tuple, optional): tuple of strs corresponding to hierarcy of folders. Defaults to ('Inbox').
 
     Raises:
@@ -212,10 +234,12 @@ if __name__ == '__main__':
 
     filter = {
               'from_name':'Ian Hall',
+              'has_attachments':True
 
             }
 
     outlook = open_outlook()
-    msgs = get_emails(outlook, filter=filter)
-    print(len(msgs))
-    move_emails(outlook, msgs, folder=('Inbox', 'Admin', 'Church','PCC'))
+    msgs = get_emails(outlook, filter=filter, folder=('Inbox', 'DLO', 'coursework_extensions') )
+    print(extract_unique_properties(msgs))
+    #print(len(msgs))
+    #move_emails(outlook, msgs, folder=('Inbox', 'Admin', 'Church','PCC'))
