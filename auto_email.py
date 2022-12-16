@@ -232,7 +232,6 @@ if __name__ == '__main__':
     #send_email(msg)
 
     filter = {
-              'from_name':'Ian Hall',
               'has_attachments':True
 
             }
