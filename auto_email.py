@@ -73,7 +73,7 @@ def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type
     Returns:
         list[Type[win32com.client.CDispatch]]: A list of all emails which match criteria in filter_fn
     """
-
+    
     messages = find_folder(outlook, folder=folder).Items
 
     #Apply filters to messages
