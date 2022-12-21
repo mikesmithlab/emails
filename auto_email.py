@@ -6,8 +6,9 @@ import sys
 # setting path
 sys.path.append('..')
 
-from custom_exceptions import FolderNotFoundException
 from dates import parse_date, format_datetime_to_str
+
+from custom_exceptions import FolderNotFoundException
 
 from typing import Optional, Callable, Type, Dict
 
@@ -73,7 +74,7 @@ def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type
     Returns:
         list[Type[win32com.client.CDispatch]]: A list of all emails which match criteria in filter_fn
     """
-    
+
     messages = find_folder(outlook, folder=folder).Items
 
     #Apply filters to messages
