@@ -1,12 +1,14 @@
+from dates import parse_date, format_datetime_to_str
+
 import win32com.client as win32
 import datetime
 import pathlib
 import sys
 
 # setting path
-sys.path.append('..')
 
-from dates import parse_date, format_datetime_to_str
+
+
 
 from custom_exceptions import FolderNotFoundException
 
