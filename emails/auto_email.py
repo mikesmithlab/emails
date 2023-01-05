@@ -7,7 +7,7 @@ import time
 from typing import Optional, Callable, Type, Dict
 
 # setting path
-from custom_exceptions import FolderNotFoundException, EmailAttachmentException
+from emails.custom_exceptions import FolderNotFoundException, EmailAttachmentException
 
 
 
