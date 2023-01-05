@@ -257,5 +257,10 @@ if __name__ == '__main__':
     #print(extract_unique_properties(msgs))
     #print(len(msgs))
     #move_emails(outlook, msgs, folder=('Inbox', 'Admin', 'Church','PCC'))
+<<<<<<< HEAD
 """
 
+||||||| 85c6247
+=======
+"""
+>>>>>>> 0ff74d3af4a89b8c70bcfb86989a880bbd7688ab
