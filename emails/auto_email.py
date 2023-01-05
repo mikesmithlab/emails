@@ -1,6 +1,3 @@
-import sys
-sys.path.append('..')
-
 from pydates.pydates import parse_date, format_datetime_to_str
 
 import win32com.client as win32
