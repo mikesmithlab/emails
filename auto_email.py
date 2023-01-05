@@ -1,18 +1,17 @@
-from dates import parse_date, format_datetime_to_str
+import sys
+sys.path.append('..')
+
+#from dates import parse_date, format_datetime_to_str
 
 import win32com.client as win32
 import datetime
 import pathlib
-import sys
+import time
+from typing import Optional, Callable, Type, Dict
 
 # setting path
+from custom_exceptions import FolderNotFoundException, EmailAttachmentException
 
-
-
-
-from custom_exceptions import FolderNotFoundException
-
-from typing import Optional, Callable, Type, Dict
 
 
 
@@ -143,7 +142,12 @@ def move_emails(outlook : Type[win32.Dispatch], messages : list, folder : tuple=
     for message in messages:
         message.move(to_mailbox)
 
-def send_email(msg: dict, attachments=None):
+def check_attachments(msg, attachments):
+    #Does quick check that all attachments have loaded correctly. Sometimes Onedrive syncing prevents this.
+    return len(msg.Attachments) == len(attachments)
+
+
+def send_email(msg: dict, attachments=None, attempt=1, max_attempts=5):
     """Sends an email using the local outlook
 
     Args:
@@ -172,8 +176,17 @@ def send_email(msg: dict, attachments=None):
     if attachments is not None:
         for attachment in attachments:
             mail.Attachments.Add(attachment)
+        attached_correctly = check_attachments(mail, attachments)
+        if not attached_correctly:
+            if attempt <= max_attempts:
+                time.sleep(30)
+                send_email(msg, attachments=attachments, attempt=attempt+1)
+            else:
+                raise EmailAttachmentException()
 
     mail.Send()
+
+
 
 """
 ------------------------------------------------------------------------------
@@ -228,19 +241,20 @@ if __name__ == '__main__':
     #outlook = open_outlook()
     #print_folder_names(outlook)
 
-    #msg = {'to':'mike.i.smith@nottingham.ac.uk',
-    #        'subject':'Test',
-    #        'html_body':'<h1>Test</h1>'}
+    msg = {'to':'mike.i.smith@nottingham.ac.uk',
+            'subject':'Test',
+            'html_body':'<h1>Test</h1>'}
 
-    #send_email(msg)
-
-    filter = {
-              'has_attachments':True
+    send_email(msg, attachments=['C:/Users/ppzmis/OneDrive - The University of Nottingham/Documents/Programming/emails/test.txt','C:/Users/ppzmis/OneDrive - The University of Nottingham/Documents/Programming/emails/test.txt'])
+"""
+    #filter = {
+    #          'has_attachments':True
 
             }
 
-    outlook = open_outlook()
-    msgs = get_emails(outlook, filter=filter, folder=('Inbox', 'DLO', 'coursework_extensions') )
-    print(extract_unique_properties(msgs))
+    #outlook = open_outlook()
+    #msgs = get_emails(outlook, filter=filter, folder=('Inbox', 'DLO', 'coursework_extensions') )
+    #print(extract_unique_properties(msgs))
     #print(len(msgs))
     #move_emails(outlook, msgs, folder=('Inbox', 'Admin', 'Church','PCC'))
+"""
