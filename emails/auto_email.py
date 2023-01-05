@@ -237,30 +237,3 @@ def extract_unique_properties(messages):
     return properties
 
 
-if __name__ == '__main__':
-    #outlook = open_outlook()
-    #print_folder_names(outlook)
-
-    msg = {'to':'mike.i.smith@nottingham.ac.uk',
-            'subject':'Test',
-            'html_body':'<h1>Test</h1>'}
-
-    send_email(msg, attachments=['C:/Users/ppzmis/OneDrive - The University of Nottingham/Documents/Programming/emails/test.txt','C:/Users/ppzmis/OneDrive - The University of Nottingham/Documents/Programming/emails/test.txt'])
-"""
-    #filter = {
-    #          'has_attachments':True
-
-            }
-
-    #outlook = open_outlook()
-    #msgs = get_emails(outlook, filter=filter, folder=('Inbox', 'DLO', 'coursework_extensions') )
-    #print(extract_unique_properties(msgs))
-    #print(len(msgs))
-    #move_emails(outlook, msgs, folder=('Inbox', 'Admin', 'Church','PCC'))
-<<<<<<< HEAD
-"""
-
-||||||| 85c6247
-=======
-"""
->>>>>>> 0ff74d3af4a89b8c70bcfb86989a880bbd7688ab
