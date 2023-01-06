@@ -101,26 +101,39 @@ def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type
 
     return list(messages)
 
-def download_attachments(messages : list, folder : str, change_filename : bool=False) -> list:
+def _keep_attachment(attachment, filter_out : tuple) -> bool:
+    """Takes and attachment and if filename contains any of the strings in filter_out returns True
+    """
+    keep = True
+    for filter in filter_out:
+        if filter in attachment.FileName:
+            flag=False
+    return keep
+
+def download_attachments(messages : list, folder : str, filter_out : tuple=('.jpg',), change_filename : bool=False) -> list:
     """Downloads the attachments from a collection of messages to a specified folder. If change_filename is True the
     names will be generated to have format `request2_3'. Function will overwrite files with out checking.
 
     Args:
         messages (list): list of message items returned by get_emails. Takes output from get_emails()
-        folder (tuple, optional): folder to which attachments should be downloaded specified in hierarchical format ('Inbox', 'Admin', 'Church').
+        folder (tuple, optional): folder to which attachments should be downloaded specified in 
+        hierarchical format ('Inbox', 'Admin', 'Church').
+        filter_out (tuple, optional): will not download attachments containing strings in tuple
+        change_name: (bool): changes filename to str(uuid.uui4()) if True else keeps filename, defaults to False
 
     Returns:
         list: list of strings containing downloaded attachment full path and new filenames.
     """
     attachment_names = []
-    for i,message in enumerate(messages):
-        for j,attachment in enumerate(message.Attachments):
-            if change_filename:
-                filename=folder + str(uuid.uuid4()) + pathlib.Path(attachment.FileName).suffix
-            else:
-                filename = attachment.FileName
-            attachment.SaveAsFile(filename)
-            attachment_names.append(filename)
+    for message in messages:
+        for attachment in message.Attachments:
+            if _keep_attachment(attachment, filter_out):
+                if change_filename:
+                    filename=folder + str(uuid.uuid4()) + pathlib.Path(attachment.FileName).suffix
+                else:
+                    filename = attachment.FileName
+                attachment.SaveAsFile(filename)
+                attachment_names.append(filename)
     return attachment_names
 
 def move_emails(outlook : Type[win32.Dispatch], messages : list, folder : tuple=('Inbox')):
@@ -140,7 +153,7 @@ def move_emails(outlook : Type[win32.Dispatch], messages : list, folder : tuple=
     for message in messages:
         message.move(to_mailbox)
 
-def check_attachments(msg, attachments):
+def _check_attachments(msg, attachments):
     #Does quick check that all attachments have loaded correctly. Sometimes Onedrive syncing prevents this.
     return len(msg.Attachments) == len(attachments)
 
@@ -174,7 +187,7 @@ def send_email(msg: dict, attachments=None, attempt=1, max_attempts=5):
     if attachments is not None:
         for attachment in attachments:
             mail.Attachments.Add(attachment)
-        attached_correctly = check_attachments(mail, attachments)
+        attached_correctly = _check_attachments(mail, attachments)
         if not attached_correctly:
             if attempt <= max_attempts:
                 time.sleep(30)

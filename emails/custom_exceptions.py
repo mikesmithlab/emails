@@ -6,6 +6,6 @@ class FolderNotFoundException(Exception):
         print('Folder not found. Check with ')
 
 class EmailAttachmentException(Exception):
-    def __init__(self, e):
-        super().__init__(e)
+    def __init__(self):
+        super().__init__()
         print('Failure to send email with attachment')
