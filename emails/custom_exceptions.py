@@ -9,3 +9,8 @@ class EmailAttachmentException(Exception):
     def __init__(self):
         super().__init__()
         print('Failure to send email with attachment')
+
+class FilterException(Exception):
+    def __init__(self):
+        super().__init__()
+        print('Filter contains start > stop or start > now')

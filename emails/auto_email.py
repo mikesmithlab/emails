@@ -1,5 +1,3 @@
-from pydates.pydates import parse_date, format_datetime_to_str
-
 import win32com.client as win32
 import datetime
 import pathlib
@@ -8,8 +6,8 @@ from typing import Optional, Callable, Type, Dict
 import uuid
 
 # setting path
-from emails.custom_exceptions import FolderNotFoundException, EmailAttachmentException
-from pydates.pydates import relative_datetime, now
+from emails.custom_exceptions import FolderNotFoundException, EmailAttachmentException, FilterException
+from pydates.pydates import relative_datetime, now, parse_date, format_datetime_to_str
 
 
 
@@ -77,10 +75,10 @@ def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type
     Returns:
         list[Type[win32com.client.CDispatch]]: A list of all emails which match criteria in filter_fn
     """
-
     messages = find_folder(outlook, folder=folder).Items
     
-    
+    #Checks the start and stop values make sense
+    _check_filter(filter)
     #Apply filters to messages
     #https://docs.oracle.com/cd/E13218_01/wlp/compozearchive/javadoc/portlets20/com/compoze/exchange/webdav/HttpMailProperty.html
     if 'start' in filter.keys():
@@ -162,6 +160,37 @@ def _check_attachments(msg, attachments):
     #Does quick check that all attachments have loaded correctly. Sometimes Onedrive syncing prevents this.
     return len(msg.Attachments) == len(attachments)
 
+def _check_filter(filter):
+    """Checks that the filter start and stop values make sense"""
+    filter_ok = True
+    if 'start' in filter.keys():
+        if type(filter['start']) == type(' '):
+            start = parse_date(filter['start'])
+        else:
+            start = filter['start']
+        if start > now():
+            raise FilterException
+
+        if 'stop' in filter.keys():
+            if type(filter['stop']) == type(' '):
+                stop = parse_date(filter['stop'])
+            else:
+                stop = filter['stop']
+            if start > stop:
+                raise FilterException
+    
+
+
+
+                raise FilterException
+            if 'stop' in filter.keys():
+                if parse_date(filter['start']) > parse_date(filter['stop']):
+                    raise FilterException
+        else:
+            if filter['start'] > now():
+                raise FilterException
+        
+            if 
 
 def send_email(msg: dict, attachments=None, attempt=1, max_attempts=5):
     """Sends an email using the local outlook
@@ -209,6 +238,9 @@ def send_email(msg: dict, attachments=None, attempt=1, max_attempts=5):
 Helper functions
 ------------------------------------------------------------------------------
 """
+
+
+
 def find_sender_emails(outlook, folder=('Inbox',)) -> tuple:
     """Scans a folder and collects all the sender email addresses used to send emails to it"""
     filter = {'start': relative_datetime(now(),delta_day=1),
