@@ -50,6 +50,9 @@ def find_folder(outlook, folder: tuple=('Inbox',)) -> Type[win32.CDispatch]:
 def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type[win32.CDispatch]]:
     """A function to scan emails on local Outlook client
 
+    Reference to all attributes of a message
+    https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.outlook.mailitem?redirectedfrom=MSDN&view=outlook-pia#properties_
+
     Args:
         folder (tuple): Specifies folder tree. Tuple of strings starting with top level folder descending to lowest subfolder. Call print_folder_names to see what is what
         filter (dict): a dictionary specifying filters to the emails returned. Defaults to {}
@@ -136,13 +139,13 @@ def download_attachments(messages : list, folder : str, filter_out : tuple=('.jp
                 attachment_names.append(filename)
     return attachment_names
 
-def move_emails(outlook : Type[win32.Dispatch], messages : list, folder : tuple=('Inbox')):
+def move_emails(outlook : Type[win32.Dispatch], messages : list, folder : tuple=('Inbox',)):
     """Moves messages to new folder
 
     Args:
         outlook (Type[win32.Dispatch]): Mail Object
         messages (list): list of message items returned by get_emails. Takes output from get_emails()
-        folder (tuple, optional): tuple of strs corresponding to hierarcy of folders. Defaults to ('Inbox').
+        folder (tuple, optional): tuple of strs corresponding to hierarcy of folders e.g. ('Inbox', 'DLO', 'coursework_extensions'). Defaults to ('Inbox',). Use print_folder_names() to view hierarchy and names
 
     Raises:
         FolderNotFoundException: _description_
@@ -204,6 +207,14 @@ def send_email(msg: dict, attachments=None, attempt=1, max_attempts=5):
 Helper functions
 ------------------------------------------------------------------------------
 """
+def find_emails(outlook, folder=('Inbox','DLO','coursework_extensions')) -> tuple:
+    """Scans a folder and collects all the sender email addresses used to send emails to it"""
+    msgs = get_emails(outlook, folder=('Inbox','DLO','coursework_extensions'))
+    sending_emails = []
+    for msg in msgs:
+        if msg.SenderEmailAddress not in sending_emails:
+            sending_emails.append(msg.SenderEmailAddress)
+    return tuple(sending_emails)
 
 def print_folder_names(outlook, account='ppzmis@exmail.nottingham.ac.uk'):
     """
