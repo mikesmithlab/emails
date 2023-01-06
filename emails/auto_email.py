@@ -207,9 +207,9 @@ def send_email(msg: dict, attachments=None, attempt=1, max_attempts=5):
 Helper functions
 ------------------------------------------------------------------------------
 """
-def find_sender_emails(outlook, folder=('Inbox','DLO','coursework_extensions')) -> tuple:
+def find_sender_emails(outlook, folder=('Inbox',)) -> tuple:
     """Scans a folder and collects all the sender email addresses used to send emails to it"""
-    msgs = get_emails(outlook, folder=('Inbox','DLO','coursework_extensions'))
+    msgs = get_emails(outlook, folder=folder)
     sending_emails = []
     for msg in msgs:
         if msg.SenderEmailAddress not in sending_emails:
