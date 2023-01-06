@@ -180,18 +180,6 @@ def _check_filter(filter):
                 raise FilterException
     
 
-
-
-                raise FilterException
-            if 'stop' in filter.keys():
-                if parse_date(filter['start']) > parse_date(filter['stop']):
-                    raise FilterException
-        else:
-            if filter['start'] > now():
-                raise FilterException
-        
-            if 
-
 def send_email(msg: dict, attachments=None, attempt=1, max_attempts=5):
     """Sends an email using the local outlook
 
