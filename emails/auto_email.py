@@ -77,15 +77,19 @@ def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type
     """
     messages = find_folder(outlook, folder=folder).Items
     
-    #Checks the start and stop values make sense
+    #Checks the start and stop values make sense. 
     _check_filter(filter)
     #Apply filters to messages
     #https://docs.oracle.com/cd/E13218_01/wlp/compozearchive/javadoc/portlets20/com/compoze/exchange/webdav/HttpMailProperty.html
     if 'start' in filter.keys():
+        if type(filter['start']) == type(' '):
+            filter['start'] = parse_date(filter['start'])
         #Note format string is American Y-d-m for the benefit of Outlook
-        messages = messages.Restrict("[ReceivedTime] >= '" + format_datetime_to_str(parse_date(filter['start']),format="%Y-%d-%m %H:%M %p") + "'")
+        messages = messages.Restrict("[ReceivedTime] >= '" + format_datetime_to_str(filter['start'],format="%Y-%d-%m %H:%M %p") + "'")
     if 'stop' in filter.keys():
-        messages = messages.Restrict("[ReceivedTime] <= '" + format_datetime_to_str(parse_date(filter['stop']),format="%Y-%d-%m %H:%M %p") + "'")
+        if type(filter['stop']) == type(' '):
+            filter['stop'] = parse_date(filter['stop'])
+        messages = messages.Restrict("[ReceivedTime] <= '" + format_datetime_to_str(filter['stop'],format="%Y-%d-%m %H:%M %p") + "'")
     if 'from_email' in filter.keys():
         messages = messages.Restrict("@SQL=urn:schemas:httpmail:fromemail Like '%" + filter['from_email'] + "%'" )
     if 'from_name' in filter.keys():
@@ -231,15 +235,12 @@ Helper functions
 
 def find_sender_emails(outlook, folder=('Inbox',)) -> tuple:
     """Scans a folder and collects all the sender email addresses used to send emails to it"""
-    filter = {'start': relative_datetime(now(),delta_day=1),
-              'stop':relative_datetime(now(),delta_day=-15000),
+    filter = {'start': relative_datetime(now(),delta_day=-1000),
+              'stop':relative_datetime(now(),delta_day=1),
             }
 
     msgs = get_emails(outlook, filter=filter,folder=folder)
-    sending_emails = []
-    for msg in msgs:
-        if msg.SenderEmailAddress not in sending_emails:
-            sending_emails.append(msg.SenderEmailAddress)
+    sending_emails = extract_unique_properties(msgs)['from_email']
     return tuple(sending_emails)
 
 def print_folder_names(outlook, account='ppzmis@exmail.nottingham.ac.uk'):
@@ -270,8 +271,6 @@ def extract_unique_properties(messages):
                     'from_name':[],
                     'subject':[]
                 }
-    for message in messages:
-        print(message.Subject)
 
     for message in messages:
         properties['from_name'].append(str(message.Sender))
