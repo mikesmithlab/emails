@@ -101,7 +101,7 @@ def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type
 
     return list(messages)
 
-def download_attachments(messages : Type[win32.CDispatch], folder : str, change_filename : bool=False) -> list():
+def download_attachments(messages : list, folder : str, change_filename : bool=False) -> list:
     """Downloads the attachments from a collection of messages to a specified folder. If change_filename is True the
     names will be generated to have format `request2_3'. Function will overwrite files with out checking.
 
