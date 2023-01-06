@@ -5,6 +5,7 @@ import datetime
 import pathlib
 import time
 from typing import Optional, Callable, Type, Dict
+import uuid
 
 # setting path
 from emails.custom_exceptions import FolderNotFoundException, EmailAttachmentException
@@ -115,7 +116,7 @@ def download_attachments(messages : Type[win32.CDispatch], folder : str, change_
     for i,message in enumerate(messages):
         for j,attachment in enumerate(message.Attachments):
             if change_filename:
-                filename=folder + 'request_' + str(i) + '_' + str(j) + pathlib.Path(attachment.FileName).suffix
+                filename=folder + str(uuid.uuid4()) + pathlib.Path(attachment.FileName).suffix
             else:
                 filename = attachment.FileName
             attachment.SaveAsFile(filename)
