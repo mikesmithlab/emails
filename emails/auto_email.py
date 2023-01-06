@@ -9,6 +9,7 @@ import uuid
 
 # setting path
 from emails.custom_exceptions import FolderNotFoundException, EmailAttachmentException
+from pydates.pydates import relative_datetime, now
 
 
 
@@ -78,7 +79,8 @@ def get_emails(outlook, folder: tuple=('Inbox',), filter : dict={}) -> list[Type
     """
 
     messages = find_folder(outlook, folder=folder).Items
-
+    
+    
     #Apply filters to messages
     #https://docs.oracle.com/cd/E13218_01/wlp/compozearchive/javadoc/portlets20/com/compoze/exchange/webdav/HttpMailProperty.html
     if 'start' in filter.keys():
@@ -209,7 +211,11 @@ Helper functions
 """
 def find_sender_emails(outlook, folder=('Inbox',)) -> tuple:
     """Scans a folder and collects all the sender email addresses used to send emails to it"""
-    msgs = get_emails(outlook, folder=folder)
+    filter = {'start': relative_datetime(now(),delta_day=1),
+              'stop':relative_datetime(now(),delta_day=-15000),
+            }
+
+    msgs = get_emails(outlook, filter=filter,folder=folder)
     sending_emails = []
     for msg in msgs:
         if msg.SenderEmailAddress not in sending_emails:
