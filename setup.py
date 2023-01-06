@@ -14,5 +14,6 @@ setuptools.setup(
     url='https://github.com/mikesmithlab/pydates',
     license='MIT',
     packages=setuptools.find_packages(),
-    install_requires=['pywin32','pydates', 'datetime'],
+    install_requires=['pywin32',
+                      'pydates @ git+https://github.com/mikesmithlab/pydates', 'datetime'],
 )
