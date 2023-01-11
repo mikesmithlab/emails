@@ -114,7 +114,7 @@ def _keep_attachment(attachment, filter_out : tuple) -> bool:
     keep = True
     for filter in filter_out:
         if filter in attachment.FileName:
-            flag=False
+            keep=False
     return keep
 
 def download_attachments(messages : list, folder : str, filter_out : tuple=('.jpg',), change_filename : bool=False) -> list:
